@@ -1,6 +1,60 @@
 import { createClient } from '@/lib/supabase/server';
 import { Photo, PhotoResponse } from '@/lib/types';
 
+// Base64 encoding/decoding utilities for photo names
+function encodeBase64Name(name: string): string {
+  return Buffer.from(name, 'utf-8').toString('base64');
+}
+
+function decodeBase64Name(encodedName: string): string {
+  try {
+    // Check if the string is valid base64
+    if (!isValidBase64(encodedName)) {
+      // Not base64, return as-is (backward compatibility)
+      return encodedName;
+    }
+    
+    const decoded = Buffer.from(encodedName, 'base64').toString('utf-8');
+    
+    // Additional check: if decoded string contains non-printable characters,
+    // it's probably not actually base64-encoded text
+    if (containsNonPrintableChars(decoded)) {
+      return encodedName;
+    }
+    
+    return decoded;
+  } catch {
+    // If decoding fails, return the original string (for backward compatibility)
+    return encodedName;
+  }
+}
+
+function isValidBase64(str: string): boolean {
+  try {
+    // Base64 regex pattern
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    
+    // Check if it matches base64 pattern and length is multiple of 4
+    if (!base64Regex.test(str) || str.length % 4 !== 0) {
+      return false;
+    }
+    
+    // Try to decode and re-encode to see if it's valid
+    const decoded = Buffer.from(str, 'base64').toString('utf-8');
+    const reencoded = Buffer.from(decoded, 'utf-8').toString('base64');
+    
+    return reencoded === str;
+  } catch {
+    return false;
+  }
+}
+
+function containsNonPrintableChars(str: string): boolean {
+  // Check for non-printable characters (except common whitespace)
+  const nonPrintableRegex = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/;
+  return nonPrintableRegex.test(str);
+}
+
 export async function getAllPhotos(includeNames = false): Promise<PhotoResponse[]> {
   const supabase = await createClient();
   
@@ -26,7 +80,7 @@ export async function getAllPhotos(includeNames = false): Promise<PhotoResponse[
     id: photo.id,
     file_url: photo.file_url,
     created_at: photo.created_at,
-    ...(includeNames && { name: photo.name }),
+    ...(includeNames && { name: decodeBase64Name(photo.name) }),
   }));
 }
 
@@ -51,11 +105,11 @@ export async function createPhoto(name: string, file: File): Promise<PhotoRespon
     .from('photos')
     .getPublicUrl(fileName);
 
-  // Save photo record to database
+  // Save photo record to database with base64-encoded name
   const { data: photo, error: dbError } = await supabase
     .from('photos')
     .insert({
-      name,
+      name: encodeBase64Name(name),
       file_path: uploadData.path,
       file_url: publicUrl,
     })
@@ -131,6 +185,6 @@ export async function getPhotoWithName(id: string): Promise<PhotoResponse> {
     id: photo.id,
     file_url: photo.file_url,
     created_at: photo.created_at,
-    name: photo.name,
+    name: decodeBase64Name(photo.name),
   };
 }
