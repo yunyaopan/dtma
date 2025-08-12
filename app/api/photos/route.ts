@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { getAllPhotos, createPhoto } from '@/lib/api/photos';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
     // Never include names by default - names are only revealed via individual API calls
     const photos = await getAllPhotos(false);
     

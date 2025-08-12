@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -122,11 +123,12 @@ export function PhotoUpload({ onUploadSuccess }: PhotoUploadProps) {
           </div>
 
           {preview && (
-            <div className="relative">
-              <img
+            <div className="relative h-48 rounded-md overflow-hidden">
+              <Image
                 src={preview}
                 alt="Preview"
-                className="w-full h-48 object-cover rounded-md"
+                fill
+                className="object-cover"
               />
               <Button
                 type="button"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -133,11 +134,13 @@ export function PhotoGallery({ isAdmin, refreshTrigger, onPhotoClick }: PhotoGal
         <Card key={photo.id} className="overflow-hidden group">
           <CardContent className="p-0">
             <div className="relative aspect-square">
-              <img
+              <Image
                 src={photo.file_url}
                 alt={photo.name || 'Photo'}
-                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                fill
+                className="object-cover cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={() => onPhotoClick(photo)}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
               
               {/* Overlay with controls */}
